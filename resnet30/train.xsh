@@ -7,6 +7,6 @@ import sys
 # parser.add_argument('--gpu', type=int, default=-1)
 # args = parser.parse_args($ARGS[1:])
 
-model_file = 'model1.py'
+model_file = 'model.py'
 
 python @(model_file) --batch_size 500 --iters 5 --device CPU
