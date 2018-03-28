@@ -169,8 +169,8 @@ def run_benchmark(model, args):
             end = time.time()
             loss = np.array(outs[0])
             acc = np.array(outs[1])
-            print("pass=%d, batch=%d, loss=%f, error=%f, elapse=%f" %
-                  (pass_id, batch_id, loss, 1 - acc, (end - start)))
+            #print("pass=%d, batch=%d, loss=%f, error=%f, elapse=%f" %
+            #      (pass_id, batch_id, loss, 1 - acc, (end - start)))
 
         pass_end = time.time()
 
