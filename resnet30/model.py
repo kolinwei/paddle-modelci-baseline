@@ -12,10 +12,8 @@ import paddle.v2 as paddle
 import paddle.fluid as fluid
 import paddle.fluid.core as core
 
-from continuous_evaluation import (train_cost_factor,
-                                   train_duration_factor,
-                                   tracking_factors)
-
+from continuous_evaluation import (train_cost_kpi, train_duration_kpi,
+                                   tracking_kpis)
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +120,12 @@ def train(batch_size, device, pass_num, iterations):
             # print('y_data', y_data)
 
             predict_, avg_cost_ = exe.run(
-                inference_program, feed={
+                inference_program,
+                feed={
                     "data": img_data,
                     "label": y_data
-                }, fetch_list=[predict, avg_cost])
+                },
+                fetch_list=[predict, avg_cost])
             return avg_cost
 
         # return accuracy.eval(exe)
@@ -149,13 +149,15 @@ def train(batch_size, device, pass_num, iterations):
             label = label.reshape([-1, 1])
             avg_cost_ = exe.run(
                 fluid.default_main_program(),
-                feed={'data': image,
-                      'label': label},
+                feed={
+                    'data': image,
+                    'label': label
+                },
                 fetch_list=[avg_cost])
             batch_end = time.time()
             print('avg_cost', np.array(avg_cost_, dtype='float32'))
-            train_cost_factor.add_record(np.array(avg_cost_, dtype='float32'))
-            train_duration_factor.add_record(batch_end - batch_start)
+            train_cost_kpi.add_record(np.array(avg_cost_, dtype='float32'))
+            train_duration_kpi.add_record(batch_end - batch_start)
 
             iter += 1
 
@@ -177,5 +179,5 @@ def parse_args():
 args = parse_args()
 train(args.batch_size, args.device, 1, args.iters)
 
-for factor in tracking_factors:
-    factor.persist()
+for kpi in tracking_kpis:
+    kpi.persist()

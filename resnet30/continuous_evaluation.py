@@ -1,12 +1,12 @@
 import os
 import sys
-sys.path.append(os.environ['modelci_root'])
-from core import CostFactor, DurationFactor
+sys.path.append(os.environ['ceroot'])
+from kpi import CostKpi, DurationKpi
 
-train_cost_factor = CostFactor('train_cost', 0.15)
-train_duration_factor = DurationFactor('train_duration', 0.15)
+train_cost_kpi = CostKpi('train_cost', 0.15)
+train_duration_kpi = DurationKpi('train_duration', 0.15)
 
-tracking_factors = [
-    train_cost_factor,
-    train_duration_factor,
+tracking_kpis = [
+    train_cost_kpi,
+    train_duration_kpi,
 ]
