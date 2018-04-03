@@ -1,1 +1,0 @@
-../resnet30/model.py

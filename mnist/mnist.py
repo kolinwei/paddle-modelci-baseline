@@ -10,10 +10,8 @@ import paddle.v2 as paddle
 import paddle.fluid as fluid
 import paddle.fluid.profiler as profiler
 
-from continuous_evaluation import (train_acc_factor,
-				   test_acc_factor,
-                                   train_duration_factor,
-                                   tracking_factors)
+from continuous_evaluation import (train_acc_kpi, test_acc_kpi,
+                                   train_duration_kpi, tracking_kpis)
 SEED = 1
 DTYPE = "float32"
 
@@ -26,7 +24,10 @@ def parse_args():
     parser.add_argument(
         '--batch_size', type=int, default=128, help='The minibatch size.')
     parser.add_argument(
-        '--iterations', type=int, default=35, help='The number of minibatches.')
+        '--iterations',
+        type=int,
+        default=35,
+        help='The number of minibatches.')
     parser.add_argument(
         '--pass_num', type=int, default=5, help='The number of passes.')
     parser.add_argument(
@@ -48,8 +49,8 @@ def parse_args():
 
 
 def print_arguments(args):
-    vars(args)['use_nvprof'] = (vars(args)['use_nvprof'] and
-                                vars(args)['device'] == 'GPU')
+    vars(args)['use_nvprof'] = (vars(args)['use_nvprof']
+                                and vars(args)['device'] == 'GPU')
     print('-----------  Configuration Arguments -----------')
     for arg, value in sorted(vars(args).iteritems()):
         print('%s: %s' % (arg, value))
@@ -98,9 +99,13 @@ def eval_test(exe, batch_acc, batch_size_tensor, inference_program):
         y_data = np.array(map(lambda x: x[1], data)).astype("int64")
         y_data = y_data.reshape([len(y_data), 1])
 
-        acc, weight = exe.run(inference_program,
-                              feed={"pixel": img_data, "label": y_data},
-                              fetch_list=[batch_acc, batch_size_tensor])
+        acc, weight = exe.run(
+            inference_program,
+            feed={
+                "pixel": img_data,
+                "label": y_data
+            },
+            fetch_list=[batch_acc, batch_size_tensor])
         test_pass_acc.add(value=acc, weight=weight)
         pass_acc = test_pass_acc.eval()
     return pass_acc
@@ -122,13 +127,14 @@ def run_benchmark(model, args):
 
     # Evaluator
     batch_size_tensor = fluid.layers.create_tensor(dtype='int64')
-    batch_acc = fluid.layers.accuracy(input=predict, label=label, total=batch_size_tensor)
+    batch_acc = fluid.layers.accuracy(
+        input=predict, label=label, total=batch_size_tensor)
 
     # inference program
     inference_program = fluid.default_main_program().clone()
     with fluid.program_guard(inference_program):
         inference_program = fluid.io.get_inference_program(
-                          target_vars=[batch_acc, batch_size_tensor])
+            target_vars=[batch_acc, batch_size_tensor])
 
     # Optimization
     opt = fluid.optimizer.AdamOptimizer(
@@ -161,8 +167,10 @@ def run_benchmark(model, args):
             start = time.time()
             outs = exe.run(
                 fluid.default_main_program(),
-                feed={"pixel": img_data,
-                      "label": y_data},
+                feed={
+                    "pixel": img_data,
+                    "label": y_data
+                },
                 fetch_list=[avg_cost, batch_acc, batch_size_tensor]
             )  # The accuracy is the accumulation of batches, but not the current batch.
             accuracy.add(value=outs[1], weight=outs[2])
@@ -173,15 +181,16 @@ def run_benchmark(model, args):
         pass_end = time.time()
 
         train_avg_acc = accuracy.eval()
-        test_avg_acc = eval_test(exe, batch_acc, batch_size_tensor, inference_program)
-	
+        test_avg_acc = eval_test(exe, batch_acc, batch_size_tensor,
+                                 inference_program)
+
         print("pass=%d, train_avg_acc=%f, test_avg_acc=%f, elapse=%f" %
-              (pass_id, train_avg_acc, test_avg_acc,
-               (pass_end - pass_start)))
-	
-	train_acc_factor.add_record(np.array(train_avg_acc, dtype='float32'))
-	test_acc_factor.add_record(np.array(test_avg_acc, dtype='float32'))
-	train_duration_factor.add_record(pass_end - pass_start)
+              (pass_id, train_avg_acc, test_avg_acc, (pass_end - pass_start)))
+
+        train_acc_kpi.add_record(np.array(train_avg_acc, dtype='float32'))
+        test_acc_kpi.add_record(np.array(test_avg_acc, dtype='float32'))
+        train_duration_kpi.add_record(pass_end - pass_start)
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -191,5 +200,5 @@ if __name__ == '__main__':
             run_benchmark(cnn_model, args)
     else:
         run_benchmark(cnn_model, args)
-    for factor in tracking_factors:
-	factor.persist()
+    for kpi in tracking_kpis:
+        kpi.persist()
