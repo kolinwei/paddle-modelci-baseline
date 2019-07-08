@@ -1,4 +1,5 @@
 #!/usr/bin/env xonsh
+import os
 import sys
 # import argparse
 # parser = argparse.ArgumentParser('train script')
